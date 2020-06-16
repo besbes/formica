@@ -52,7 +52,7 @@ class StackWaiter:
                 logger.info("Stack Status Successful: {}".format(stack_status))
             elif stack_status in FAILED_STATES:
                 logger.info("Stack Status Failed: {}".format(stack_status))
-                sys.exit(1)
+                finished = True
             elif not canceled and self.timeout > 0 and (datetime.now() - start).seconds > (self.timeout * 60):
                 logger.info("Timeout of {} minute(s) reached. Canceling Update.".format(self.timeout))
                 canceled = True

@@ -74,6 +74,8 @@ class Loader(object):
         self.path = path
         self.filename = filename
         self.env = Environment(loader=FileSystemLoader("./", followlinks=True))
+
+        from .deployment_package import template_filter as deployment_package_filter
         self.env.filters.update(
             {
                 "code_escape": code_escape,
@@ -81,6 +83,7 @@ class Loader(object):
                 "mandatory": mandatory,
                 "resource": resource,
                 "novalue": novalue,
+                "deployment_package": deployment_package_filter,
             }
         )
         self.variables = variables

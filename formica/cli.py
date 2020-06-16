@@ -12,6 +12,8 @@ from . import CHANGE_SET_FORMAT, __version__
 from . import stack_set
 from .aws import AWS
 from .helper import collect_vars
+from .deployment_package import DeploymentPackage
+
 
 STACK_HEADERS = ["Name", "Created At", "Updated At", "Status"]
 RESOURCE_HEADERS = ["Logical ID", "Physical ID", "Type", "Status"]
@@ -55,6 +57,7 @@ CONFIG_FILE_ARGUMENTS = {
     "use_previous_template": bool,
     "use_previous_parameters": bool,
     "s3": bool,
+    "deployment_packages": list,
 }
 
 
@@ -95,6 +98,7 @@ def main(cli_args):
     template_parser = subparsers.add_parser("template", description="Print the current template")
     add_config_file_argument(template_parser)
     add_stack_variables_argument(template_parser)
+    add_deployment_package_argument(template_parser)
     template_parser.add_argument("-y", "--yaml", help="print output as yaml", action="store_true")
     add_organization_account_template_variables(template_parser)
     template_parser.set_defaults(func=template)
@@ -385,6 +389,15 @@ def add_stack_variables_argument(parser):
         default={},
     )
 
+def add_deployment_package_argument(parser):
+    parser.add_argument(
+        "--deployment-packages",
+        help="Add one or more deployment packages",
+        nargs="+",
+        action=SplitEqualsAction,
+        metavar="KEY=Value",
+        default={},
+    )
 
 def add_stack_tags_argument(parser):
     parser.add_argument(
@@ -644,9 +657,28 @@ def wait_for_stack(function):
     return stack_wait_handler
 
 
+def deploy_packages(function):
+    def deploy_packages_handler(args, *argv):
+        if args.deployment_packages:
+            for name in args.deployment_packages:
+                deployment_package = DeploymentPackage(args.stack, name)
+                deployment_package.upload()
+
+        function(args, *argv)
+
+        if args.deployment_packages:
+            for name in args.deployment_packages:
+                deployment_package = DeploymentPackage(args.stack, name)
+                deployment_package.cleanup()
+
+    return deploy_packages_handler
+
+
 @requires_stack
+@deploy_packages
 @wait_for_stack
 def deploy(args, client):
+
     logger.info("Deploying Stack to {}".format(args.stack))
     change_set_name = CHANGE_SET_FORMAT.format(stack=args.stack)
     change_set = client.describe_change_set(StackName=args.stack, ChangeSetName=change_set_name)
@@ -658,7 +690,7 @@ def deploy(args, client):
         logger.info("ChangeSet did not contain any changes")
     else:
         logger.info("ChangeSet is not executable. Status: {}, Reason: {}".format(status, reason))
-        sys.exit(1)
+        
 
 
 @requires_stack

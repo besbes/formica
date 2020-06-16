@@ -6,6 +6,7 @@ def name(*names):
 
 def collect_vars(args):
     variables = args.vars or {}
+
     if args.organization_variables:
         variables.update(accounts_and_regions())
     else:
@@ -13,6 +14,14 @@ def collect_vars(args):
             variables.update(aws_regions())
         if args.organization_account_variables:
             variables.update(aws_accounts())
+
+    if args.deployment_packages:
+        from .deployment_package import DeploymentPackage
+        variables.update({
+            "deployment_packages": dict([(name, DeploymentPackage(args.stack, name)) 
+                for name in args.deployment_packages] if args.deployment_packages else [])
+        })
+
     return variables
 
 
