@@ -659,14 +659,14 @@ def wait_for_stack(function):
 
 def deploy_packages(function):
     def deploy_packages_handler(args, *argv):
-        if args.deployment_packages:
+        if hasattr(args, "deployment_packages"):
             for name in args.deployment_packages:
                 deployment_package = DeploymentPackage(args.stack, name)
                 deployment_package.upload()
 
         function(args, *argv)
 
-        if args.deployment_packages:
+        if hasattr(args, "deployment_packages"):
             for name in args.deployment_packages:
                 deployment_package = DeploymentPackage(args.stack, name)
                 deployment_package.cleanup()

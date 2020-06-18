@@ -15,7 +15,7 @@ def collect_vars(args):
         if args.organization_account_variables:
             variables.update(aws_accounts())
 
-    if args.deployment_packages:
+    if hasattr(args, "deployment_packages"):
         from .deployment_package import DeploymentPackage
         variables.update({
             "deployment_packages": dict([(name, DeploymentPackage(args.stack, name)) 
